@@ -1,6 +1,9 @@
-from dicts import input_list, experience_of_work, currency, currency_to_rub, print_columns, width_settings
+from dicts import input_list, experience_of_work, currency, currency_to_rub, print_columns, width_settings, work_xp, \
+    bool_dict, taxes_dict
 import sys
 import re
+import math
+from datetime import datetime
 
 
 def input_params():
@@ -76,74 +79,46 @@ def sorter(data, param, r_s):
 
 
 def formatter(row):
-    import re
-    import math
-    from datetime import datetime
-
     formatted_row = {}
 
     for key, value in row.items():
         formatted_value = value
-        if value == 'True' or value == 'False':
-            formatted_value = re.sub(r'True', 'Да', value)
-            formatted_value = re.sub(r'False', 'Нет', value)
+        if value in bool_dict:
+            formatted_value = bool_dict[value]
         if value in experience_of_work:
             formatted_value = experience_of_work[value]
         if value in currency:
             formatted_value = currency[value]
-        if key == 'Оклад указан до вычета налогов':
-            formatted_value = 'С вычетом налогов' if formatted_value == 'Нет' else 'Без вычета налогов'
         if key == 'Дата публикации вакансии':
             date = datetime.strptime(value[:10], '%Y-%m-%d')
             formatted_value = str(date.strftime('%d.%m.%Y'))
-        if key == 'Премиум-вакансия':
-            if value == 'True':
-                formatted_value = 'Да'
-            elif value == 'False':
-                formatted_value = 'Нет'
+
         formatted_row[key] = formatted_value
 
-    salary = f'{math.trunc(float(formatted_row["Нижняя граница вилки оклада"])):,} - {math.trunc(float(formatted_row["Верхняя граница вилки оклада"])):,} ({formatted_row["Идентификатор валюты оклада"]}) ({formatted_row["Оклад указан до вычета налогов"]})'.replace(
-        ',', ' ')
-    low_salary = math.trunc(float(formatted_row["Нижняя граница вилки оклада"]))
-    high_salary = math.trunc(float(formatted_row["Верхняя граница вилки оклада"]))
+    salary_values = [
+        math.trunc(float(formatted_row["Нижняя граница вилки оклада"])),
+        math.trunc(float(formatted_row["Верхняя граница вилки оклада"])),
+        formatted_row["Идентификатор валюты оклада"],
+        taxes_dict[formatted_row["Оклад указан до вычета налогов"]]
+    ]
 
-    for keys, values in currency_to_rub.items():
-        if keys in salary:
-            salary_in_rub = (int(low_salary) + int(high_salary)) / 2 * values
+    salary = f'{salary_values[0]:,} - {salary_values[1]:,} ({salary_values[2]}) ({salary_values[3]})'.replace(',', ' ')
+    salary_in_rub = (int(salary_values[0]) + int(salary_values[1])) / 2 * currency_to_rub[salary_values[2]]
 
-    splitted_row = formatted_row['Навыки'].split('ECALPER')
+    result_row = {}
+    for key, value in formatted_row.items():
+        if key in input_list:
+            result_row[key] = value
 
-    exp_index = 0
-    if formatted_row['Опыт работы'] == 'Нет опыта':
-        exp_index = 0
-    elif formatted_row['Опыт работы'] == 'От 1 года до 3 лет':
-        exp_index = 1
-    elif formatted_row['Опыт работы'] == 'От 3 до 6 лет':
-        exp_index = 2
-    elif formatted_row['Опыт работы'] == 'Более 6 лет':
-        exp_index = 3
-
-    buf_row = {
-        'Название': formatted_row['Название'],
-        'Описание': formatted_row['Описание'],
-        'Навыки': formatted_row['Навыки'],
-        'Опыт работы': formatted_row['Опыт работы'],
-        'Премиум-вакансия': formatted_row['Премиум-вакансия'],
-        'Компания': formatted_row['Компания'],
+    result_row.update({
         'Оклад': salary,
-        'Название региона': formatted_row['Название региона'],
-        'Дата публикации вакансии': formatted_row['Дата публикации вакансии'],
-        'Нижняя граница вилки оклада': row['Нижняя граница вилки оклада'],
-        'Верхняя граница вилки оклада': row['Верхняя граница вилки оклада'],
-        'Идентификатор валюты оклада': formatted_row['Идентификатор валюты оклада'],
-        'Оклад указан до вычета налогов': formatted_row['Оклад указан до вычета налогов'],
         'Зарплата в рублях': salary_in_rub,
-        'Количество навыков': len(splitted_row),
-        'Индекс опыта работы': exp_index,
+        'Количество навыков': len(formatted_row['Навыки'].split('ECALPER')),
+        'Индекс опыта работы': work_xp.index(formatted_row['Опыт работы']),
         'Дата и время': row['Дата публикации вакансии']
-    }
-    return buf_row
+    })
+
+    return result_row
 
 
 def csv_reader(file_name):

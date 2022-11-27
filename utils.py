@@ -25,7 +25,7 @@ def filtration(param, f_row):
         return f_row
 
 
-def sorter(list, param, r_s):
+def sorter(data, param, r_s):
     from operator import itemgetter
 
     if r_s == 'Да':
@@ -33,15 +33,15 @@ def sorter(list, param, r_s):
     else:
         r_s = False
     if param == 'Оклад':
-        newlist = sorted(list, key=itemgetter('Зарплата в рублях'), reverse=r_s)
+        newlist = sorted(data, key=itemgetter('Зарплата в рублях'), reverse=r_s)
     elif param == 'Навыки':
-        newlist = sorted(list, key=itemgetter('Количество навыков'), reverse=r_s)
+        newlist = sorted(data, key=itemgetter('Количество навыков'), reverse=r_s)
     elif param == 'Опыт работы':
-        newlist = sorted(list, key=itemgetter('Индекс опыта работы'), reverse=r_s)
+        newlist = sorted(data, key=itemgetter('Индекс опыта работы'), reverse=r_s)
     elif param == 'Дата публикации вакансии':
-        newlist = sorted(list, key=itemgetter('Дата и время'), reverse=r_s)
+        newlist = sorted(data, key=itemgetter('Дата и время'), reverse=r_s)
     else:
-        newlist = sorted(list, key=itemgetter(param), reverse=r_s)
+        newlist = sorted(data, key=itemgetter(param), reverse=r_s)
     return newlist
 
 
@@ -73,13 +73,14 @@ def formatter(row):
                 formatted_value = 'Нет'
         formatted_row[key] = formatted_value
 
-    salary = f'{math.trunc(float(formatted_row["Нижняя граница вилки оклада"])):,} - {math.trunc(float(formatted_row["Верхняя граница вилки оклада"])):,} ({formatted_row["Идентификатор валюты оклада"]}) ({formatted_row["Оклад указан до вычета налогов"]})'.replace(',', ' ')
-    lowsalary = math.trunc(float(formatted_row["Нижняя граница вилки оклада"]))
-    highsalary = math.trunc(float(formatted_row["Верхняя граница вилки оклада"]))
+    salary = f'{math.trunc(float(formatted_row["Нижняя граница вилки оклада"])):,} - {math.trunc(float(formatted_row["Верхняя граница вилки оклада"])):,} ({formatted_row["Идентификатор валюты оклада"]}) ({formatted_row["Оклад указан до вычета налогов"]})'.replace(
+        ',', ' ')
+    low_salary = math.trunc(float(formatted_row["Нижняя граница вилки оклада"]))
+    high_salary = math.trunc(float(formatted_row["Верхняя граница вилки оклада"]))
 
     for keys, values in currency_to_rub.items():
         if keys in salary:
-            salary_in_rub = (int(lowsalary) + int(highsalary)) / 2 * values
+            salary_in_rub = (int(low_salary) + int(high_salary)) / 2 * values
 
     splitted_row = formatted_row['Навыки'].split('ECALPER')
 
@@ -182,10 +183,10 @@ def print_table(data_vacancies, data_lines, data_columns, f_param, s_param, rev_
     list_of_tablelists = []
     list_of_dicts = []
     number = 1
-    for dict in data_vacancies[1:]:
+    for vacancy in data_vacancies[1:]:
         table_list = []
         result_row = {}
-        row = formatter(dict)
+        row = formatter(vacancy)
         if f_param != 'incorrect':
             if filtration(f_param, row) is None:
                 continue

@@ -103,7 +103,7 @@ def filtration(param, f_row):
         return f_row
 
 
-def sorter(list, param, r_s):
+def sorter(data, param, r_s):
     from operator import itemgetter
 
     if r_s == 'Да':
@@ -111,15 +111,15 @@ def sorter(list, param, r_s):
     else:
         r_s = False
     if param == 'Оклад':
-        newlist = sorted(list, key=itemgetter('Зарплата в рублях'), reverse=r_s)
+        newlist = sorted(data, key=itemgetter('Зарплата в рублях'), reverse=r_s)
     elif param == 'Навыки':
-        newlist = sorted(list, key=itemgetter('Количество навыков'), reverse=r_s)
+        newlist = sorted(data, key=itemgetter('Количество навыков'), reverse=r_s)
     elif param == 'Опыт работы':
-        newlist = sorted(list, key=itemgetter('Индекс опыта работы'), reverse=r_s)
+        newlist = sorted(data, key=itemgetter('Индекс опыта работы'), reverse=r_s)
     elif param == 'Дата публикации вакансии':
-        newlist = sorted(list, key=itemgetter('Дата и время'), reverse=r_s)
+        newlist = sorted(data, key=itemgetter('Дата и время'), reverse=r_s)
     else:
-        newlist = sorted(list, key=itemgetter(param), reverse=r_s)
+        newlist = sorted(data, key=itemgetter(param), reverse=r_s)
     return newlist
 
 
@@ -210,9 +210,11 @@ def csv_reader(file_name):
 
 def csv_filer(header, reader, list_naming):
     import re
+
     list_of_lists = []
     vacancy_list = []
     list_of_dicts = []
+
     for i in reader:
         flag = True
         for j in i:
@@ -220,6 +222,7 @@ def csv_filer(header, reader, list_naming):
                 flag = False
         if flag is True:
             list_of_lists.append(i)
+
     for row in list_of_lists:
         vacancy_row = []
         for line in row:
@@ -228,9 +231,11 @@ def csv_filer(header, reader, list_naming):
             line = str.strip(re.sub(r'\s+', ' ', line))
             vacancy_row.append(line)
         vacancy_list.append(vacancy_row)
+
     for i in vacancy_list:
         vacancy_dict = dict(zip(list_naming, i))
         list_of_dicts.append(vacancy_dict)
+
     return list_of_dicts
 
 
@@ -258,13 +263,15 @@ def print_table(data_vacancies, data_lines, data_columns, f_param, s_param, rev_
         'Индекс опыта работы',
         'Дата и время'
     ]
+
     list_of_tablelists = []
     list_of_dicts = []
     number = 1
-    for dict in data_vacancies[1:]:
+
+    for vacancy in data_vacancies[1:]:
         table_list = []
         result_row = {}
-        row = formatter(dict)
+        row = formatter(vacancy)
         if f_param != 'incorrect':
             if filtration(f_param, row) is None:
                 continue

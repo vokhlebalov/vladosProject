@@ -1,5 +1,83 @@
-from dicts import input_list, experience_of_work, currency, currency_to_rub
 import sys
+
+# vacancies_medium.csv
+# Опыт работы: От 3 до 6 лет
+# Оклад
+# Нет
+# 10 20
+# Название, Навыки, Опыт работы, Компания
+# Навыки: Git, Linux
+# Навыки: Ремонт ПК, Настройка ПК
+# Название, Навыки, Опыт работы, Премиум-вакансия, Компания, Оклад, Название региона, Дата публикации вакансии
+# vacancies_big.csv
+# Премиум-вакансия: Да
+# Название
+# Нет
+
+input_list = [
+    'Название',
+    'Описание',
+    'Навыки',
+    'Опыт работы',
+    'Премиум-вакансия',
+    'Компания',
+    'Оклад',
+    'Название региона',
+    'Дата публикации вакансии',
+    'Нижняя граница вилки оклада',
+    'Верхняя граница вилки оклада',
+    'Идентификатор валюты оклада',
+    'Оклад указан до вычета налогов'
+]
+
+API_HH_dict = {
+    'name': 'Название',
+    'description': 'Описание',
+    'key_skills': 'Навыки',
+    'experience_id': 'Опыт работы',
+    'premium': 'Премиум-вакансия',
+    'employer_name': 'Компания',
+    'salary_from': 'Нижняя граница вилки оклада',
+    'salary_to': 'Верхняя граница вилки оклада',
+    'salary_gross': 'Оклад указан до вычета налогов',
+    'salary_currency': 'Идентификатор валюты оклада',
+    'salary': 'Оклад',
+    'area_name': 'Название региона',
+    'published_at': 'Дата публикации вакансии'
+}
+
+experience_of_work = {
+    "noExperience": "Нет опыта",
+    "between1And3": "От 1 года до 3 лет",
+    "between3And6": "От 3 до 6 лет",
+    "moreThan6": "Более 6 лет"
+}
+
+currency = {
+    "AZN": "Манаты",
+    "BYR": "Белорусские рубли",
+    "EUR": "Евро",
+    "GEL": "Грузинский лари",
+    "KGS": "Киргизский сом",
+    "KZT": "Тенге",
+    "RUR": "Рубли",
+    "UAH": "Гривны",
+    "USD": "Доллары",
+    "UZS": "Узбекский сум"
+}
+
+currency_to_rub = {
+    "Манаты": 35.68,
+    "Белорусские рубли": 23.91,
+    "Евро": 59.90,
+    "Грузинский лари": 21.74,
+    "Киргизский сом": 0.76,
+    "Тенге": 0.13,
+    "Рубли": 1,
+    "Гривны": 1.64,
+    "Доллары": 60.66,
+    "Узбекский сум": 0.0055,
+}
 
 
 def filtration(param, f_row):
@@ -73,7 +151,8 @@ def formatter(row):
                 formatted_value = 'Нет'
         formatted_row[key] = formatted_value
 
-    salary = f'{math.trunc(float(formatted_row["Нижняя граница вилки оклада"])):,} - {math.trunc(float(formatted_row["Верхняя граница вилки оклада"])):,} ({formatted_row["Идентификатор валюты оклада"]}) ({formatted_row["Оклад указан до вычета налогов"]})'.replace(',', ' ')
+    salary = f'{math.trunc(float(formatted_row["Нижняя граница вилки оклада"])):,} - {math.trunc(float(formatted_row["Верхняя граница вилки оклада"])):,} ({formatted_row["Идентификатор валюты оклада"]}) ({formatted_row["Оклад указан до вычета налогов"]})'.replace(
+        ',', ' ')
     lowsalary = math.trunc(float(formatted_row["Нижняя граница вилки оклада"]))
     highsalary = math.trunc(float(formatted_row["Верхняя граница вилки оклада"]))
 
@@ -263,3 +342,50 @@ def print_table(data_vacancies, data_lines, data_columns, f_param, s_param, rev_
                 print(vacancies_table.get_string(start=data_lines[0] - 1, fields=data_columns))
         elif data_lines == [] and data_columns == ['№']:
             print(vacancies_table)
+
+
+file = input('Введите название файла: ')
+filtration_param = input('Введите параметр фильтрации: ')
+sort_param = input('Введите параметр сортировки: ')
+reverse_sort = input('Обратный порядок сортировки (Да / Нет): ')
+lines = input('Введите диапазон вывода: ')
+columns = input('Введите требуемые столбцы: ')
+
+if ':' not in filtration_param and filtration_param != '':
+    print('Формат ввода некорректен')
+    sys.exit()
+if ':' in filtration_param:
+    filtration_param = filtration_param.split(': ')
+
+if filtration_param == '':
+    filtration_param = 'incorrect'
+if filtration_param[0] == 'Навыки':
+    filtration_param[1] = filtration_param[1].split(', ')
+
+if filtration_param[0] not in input_list and filtration_param != 'incorrect':
+    print('Параметр поиска некорректен')
+    sys.exit()
+if sort_param not in input_list and sort_param != '':
+    print('Параметр сортировки некорректен')
+    sys.exit()
+if (reverse_sort != 'Да' and reverse_sort != 'Нет') and reverse_sort != '':
+    print('Порядок сортировки задан некорректно')
+    sys.exit()
+
+vacancies = []
+headers = []
+if lines != '':
+    for i in lines.split(' '):
+        vacancies.append(int(i))
+if columns != '':
+    headers = columns.split(', ')
+
+header = csv_reader(file)[0]
+header_rus = []
+for words in header:
+    for keys, values in API_HH_dict.items():
+        if words == keys:
+            header_rus.append(values)
+
+print_table(csv_filer(header, csv_reader(file), header_rus), vacancies, headers, filtration_param, sort_param,
+            reverse_sort)

@@ -60,4 +60,14 @@ for words in header:
             header_rus.append(values)
 
 
-print_table(csv_filer(header, csv_reader(file), header_rus), vacancies, headers, filtration_param, sort_param, reverse_sort)
+print_table(
+    csv_filer(
+        header,
+        csv_reader(file),
+        header_rus
+    ),
+    vacancies,
+    headers,
+    filtration_param,
+    sort_param, reverse_sort
+)

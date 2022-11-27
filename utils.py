@@ -1,4 +1,4 @@
-from dicts import input_list, experience_of_work, currency, currency_to_rub
+from dicts import input_list, experience_of_work, currency, currency_to_rub, print_columns
 import sys
 
 
@@ -160,26 +160,7 @@ def print_table(data_vacancies, data_lines, data_columns, f_param, s_param, rev_
     from prettytable import PrettyTable, ALL
 
     vacancies_table = PrettyTable()
-    vacancies_table.field_names = [
-        '№',
-        'Название',
-        'Описание',
-        'Навыки',
-        'Опыт работы',
-        'Премиум-вакансия',
-        'Компания',
-        'Оклад',
-        'Название региона',
-        'Дата публикации вакансии',
-        'Нижняя граница вилки оклада',
-        'Верхняя граница вилки оклада',
-        'Идентификатор валюты оклада',
-        'Оклад указан до вычета налогов',
-        'Зарплата в рублях',
-        'Количество навыков',
-        'Индекс опыта работы',
-        'Дата и время'
-    ]
+    vacancies_table.field_names = print_columns
     list_of_tablelists = []
     list_of_dicts = []
     number = 1

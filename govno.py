@@ -1,6 +1,6 @@
 import sys
 from dicts import input_list, API_HH_dict
-from utils import csv_reader, csv_filer, print_table
+from utils import csv_reader, csv_filer, print_table, input_params
 
 # vacancies_medium.csv
 # Опыт работы: От 3 до 6 лет
@@ -16,53 +16,39 @@ from utils import csv_reader, csv_filer, print_table
 # Название
 # Нет
 
-file = input('Введите название файла: ')
-filtration_param = input('Введите параметр фильтрации: ')
-sort_param = input('Введите параметр сортировки: ')
-reverse_sort = input('Обратный порядок сортировки (Да / Нет): ')
-lines = input('Введите диапазон вывода: ')
-columns = input('Введите требуемые столбцы: ')
 
-if ':' not in filtration_param and filtration_param != '':
-    print('Формат ввода некорректен')
+try:
+    input_data = input_params()
+except ValueError as error:
+    print(error)
     sys.exit()
-if ':' in filtration_param:
-    filtration_param = filtration_param.split(': ')
 
-if filtration_param == '':
-    filtration_param = 'incorrect'
-if filtration_param[0] == 'Навыки':
-    filtration_param[1] = filtration_param[1].split(', ')
-
-if filtration_param[0] not in input_list and filtration_param != 'incorrect':
-    print('Параметр поиска некорректен')
-    sys.exit()
-if sort_param not in input_list and sort_param != '':
-    print('Параметр сортировки некорректен')
-    sys.exit()
-if (reverse_sort != 'Да' and reverse_sort != 'Нет') and reverse_sort != '':
-    print('Порядок сортировки задан некорректно')
-    sys.exit()
+file = input_data["file"]
+filtration_param = input_data["filtration_param"]
+sort_param = input_data["sort_param"]
+reverse_sort = input_data["reverse_sort"]
+rows_range = input_data["rows_range"]
+columns = input_data["columns"]
 
 vacancies = []
 headers = []
-if lines != '':
-    for i in lines.split(' '):
-        vacancies.append(int(i))
+
+if rows_range != '':
+    vacancies.extend(list(map(int, rows_range.split(' '))))
+
 if columns != '':
     headers = columns.split(', ')
 
-header = csv_reader(file)[0]
+header_row = csv_reader(file)[0]
 header_rus = []
-for words in header:
-    for keys, values in API_HH_dict.items():
-        if words == keys:
-            header_rus.append(values)
 
+for cell in header_row:
+    if cell in API_HH_dict:
+        header_rus.append(API_HH_dict[cell])
 
 print_table(
     csv_filer(
-        header,
+        header_row,
         csv_reader(file),
         header_rus
     ),

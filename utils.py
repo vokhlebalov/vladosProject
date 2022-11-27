@@ -1,25 +1,57 @@
-from dicts import input_list, experience_of_work, currency, currency_to_rub, print_columns
+from dicts import input_list, experience_of_work, currency, currency_to_rub, print_columns, width_settings
 import sys
+import re
+
+
+def input_params():
+    input_dict = {
+        "file": input('Введите название файла: '),
+        "filtration_param": input('Введите параметр фильтрации: '),
+        "sort_param": input('Введите параметр сортировки: '),
+        "reverse_sort": input('Обратный порядок сортировки (Да / Нет): '),
+        "rows_range": input('Введите диапазон вывода: '),
+        "columns": input('Введите требуемые столбцы: ')
+    }
+
+    if len(input_dict["filtration_param"]) > 0 and ': ' not in input_dict["filtration_param"]:
+        raise ValueError('Формат ввода некорректен')
+
+    if input_dict["sort_param"] not in input_list and input_dict["sort_param"] != '':
+        raise ValueError('Параметр сортировки некорректен')
+
+    if input_dict["reverse_sort"] not in ['Да', 'Нет'] and input_dict["reverse_sort"] != '':
+        raise ValueError('Порядок сортировки задан некорректно')
+
+    filers_set = list(filter(None, input_dict["filtration_param"].split(': ')))
+
+    if len(filers_set) == 0:
+        return input_dict
+
+    if filers_set[0] == 'Навыки':
+        filers_set[1] = filers_set[1].split(', ')
+
+    if filers_set[0] not in input_list:
+        raise ValueError('Параметр поиска некорректен')
+
+    input_dict["filtration_param"] = filers_set
+
+    return input_dict
 
 
 def filtration(param, f_row):
-    if param != 'incorrect':
-        if param[0] in input_list and param[0] != 'Навыки' and param[0] != 'Оклад':
-            if param[0] in f_row.keys() and f_row[param[0]] == param[1]:
-                return f_row
-
-        elif param[0] == 'Навыки':
-            flag = True
-            if param[0] in f_row.keys():
-                form_value = f_row[param[0]].replace('ECALPER', ', ').split(', ')
-                flag = all(item in form_value for item in param[1])
-
-            if flag:
+    if len(param) > 0:
+        if param[0] == 'Навыки':
+            form_value = f_row[param[0]].replace('ECALPER', ', ').split(', ')
+            if all(item in form_value for item in param[1]):
                 return f_row
 
         elif param[0] == 'Оклад':
             if int(f_row['Нижняя граница вилки оклада']) <= int(param[1]) <= int(
                     f_row['Верхняя граница вилки оклада']):
+                return f_row
+
+        elif param[0] in input_list:
+            if f_row[param[0]] == param[1]:
                 return f_row
     else:
         return f_row
@@ -131,29 +163,48 @@ def csv_reader(file_name):
 
 
 def csv_filer(header, reader, list_naming):
-    import re
-    list_of_lists = []
-    vacancy_list = []
-    list_of_dicts = []
-    for i in reader:
-        flag = True
-        for j in i:
-            if len(i) != len(header) or j == '':
-                flag = False
-        if flag is True:
-            list_of_lists.append(i)
-    for row in list_of_lists:
+
+    formatted_data = format_raw_data(remove_empty_data(reader, len(header)))
+    result_data = []
+
+    for row in formatted_data:
+        vacancy_dict = dict(zip(list_naming, row))
+        result_data.append(vacancy_dict)
+
+    return result_data
+
+
+def format_raw_data(data):
+    formatted_data = []
+
+    for row in data:
         vacancy_row = []
+
         for line in row:
             line = re.sub(r'<[^>]*>', '', line)
             line = line.replace('\n', 'ECALPER')
             line = str.strip(re.sub(r'\s+', ' ', line))
             vacancy_row.append(line)
-        vacancy_list.append(vacancy_row)
-    for i in vacancy_list:
-        vacancy_dict = dict(zip(list_naming, i))
-        list_of_dicts.append(vacancy_dict)
-    return list_of_dicts
+
+        formatted_data.append(vacancy_row)
+
+    return formatted_data
+
+
+def remove_empty_data(data, table_length):
+    cleared_data = []
+
+    for row in data:
+        flag = True
+
+        for cell in row:
+            if len(row) != table_length or cell == '':
+                flag = False
+
+        if flag is True:
+            cleared_data.append(row)
+
+    return cleared_data
 
 
 def print_table(data_vacancies, data_lines, data_columns, f_param, s_param, rev_sort):
@@ -164,16 +215,19 @@ def print_table(data_vacancies, data_lines, data_columns, f_param, s_param, rev_
     list_of_tablelists = []
     list_of_dicts = []
     number = 1
+
     for vacancy in data_vacancies[1:]:
         table_list = []
         result_row = {}
         row = formatter(vacancy)
-        if f_param != 'incorrect':
+
+        if len(f_param) > 0:
             if filtration(f_param, row) is None:
                 continue
             result_row = filtration(f_param, row)
-        elif f_param == 'incorrect':
+        elif len(f_param) == 0:
             result_row = row
+
         for key, value in result_row.items():
             formatted_value = ''
             if key == 'Навыки':
@@ -181,6 +235,7 @@ def print_table(data_vacancies, data_lines, data_columns, f_param, s_param, rev_
                 for i in splitted_value:
                     formatted_value += i
                 result_row['Навыки'] = formatted_value
+
         if s_param == '':
             for i in result_row.values():
                 if isinstance(i, str):
@@ -196,7 +251,9 @@ def print_table(data_vacancies, data_lines, data_columns, f_param, s_param, rev_
             number += 1
         else:
             list_of_dicts.append(result_row)
+
     list_of_dicts = sorter(list_of_dicts, s_param, rev_sort)
+
     for i in list_of_dicts:
         table_list1 = []
         for j in i.values():
@@ -211,12 +268,12 @@ def print_table(data_vacancies, data_lines, data_columns, f_param, s_param, rev_
         table_list1.insert(0, number)
         list_of_tablelists.append(table_list1)
         number += 1
+
     data_columns.insert(0, '№')
     vacancies_table.add_rows(list_of_tablelists)
     vacancies_table.align = 'l'
-    vacancies_table._max_width = {'№': 20, 'Название': 20, 'Описание': 20, 'Навыки': 20, 'Опыт работы': 20,
-                                  'Премиум-вакансия': 20, 'Компания': 20, 'Оклад': 20, 'Название региона': 20,
-                                  'Дата публикации вакансии': 20}
+    vacancies_table._max_width = width_settings
+
     vacancies_table.del_column('Нижняя граница вилки оклада')
     vacancies_table.del_column('Верхняя граница вилки оклада')
     vacancies_table.del_column('Идентификатор валюты оклада')
@@ -226,22 +283,23 @@ def print_table(data_vacancies, data_lines, data_columns, f_param, s_param, rev_
     vacancies_table.del_column('Индекс опыта работы')
     vacancies_table.del_column('Дата и время')
     vacancies_table.hrules = ALL
-    if list_of_tablelists == [] and f_param == 'incorrect':
+
+    if len(list_of_tablelists) == 0 and len(f_param) == 0:
         print('Нет данных')
-    elif list_of_tablelists == [] and f_param != 'incorrect':
+    elif len(list_of_tablelists) == 0 and len(f_param) > 0:
         print('Ничего не найдено')
     else:
-        if data_lines == [] and data_columns != ['№']:
+        if len(data_lines) == 0 and data_columns != ['№']:
             print(vacancies_table.get_string(fields=data_columns))
-        elif data_columns == ['№'] and data_lines != []:
-            if len(data_lines) != 1:
+        elif data_columns == ['№'] and len(data_lines) > 0:
+            if len(data_lines) > 1:
                 print(vacancies_table.get_string(start=data_lines[0] - 1, end=(data_lines[1] - 1)))
             else:
                 print(vacancies_table.get_string(start=data_lines[0] - 1))
-        elif data_columns != ['№'] and data_lines != []:
-            if len(data_lines) != 1:
+        elif data_columns != ['№'] and len(data_lines) > 0:
+            if len(data_lines) > 1:
                 print(vacancies_table.get_string(start=data_lines[0] - 1, end=(data_lines[1] - 1), fields=data_columns))
             else:
                 print(vacancies_table.get_string(start=data_lines[0] - 1, fields=data_columns))
-        elif data_lines == [] and data_columns == ['№']:
+        elif len(data_lines) == 0 and data_columns == ['№']:
             print(vacancies_table)

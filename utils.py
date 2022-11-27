@@ -60,21 +60,19 @@ def filtration(param, f_row):
 def sorter(data, param, r_s):
     from operator import itemgetter
 
-    if r_s == 'Да':
-        r_s = True
-    else:
-        r_s = False
-    if param == 'Оклад':
-        newlist = sorted(data, key=itemgetter('Зарплата в рублях'), reverse=r_s)
-    elif param == 'Навыки':
-        newlist = sorted(data, key=itemgetter('Количество навыков'), reverse=r_s)
-    elif param == 'Опыт работы':
-        newlist = sorted(data, key=itemgetter('Индекс опыта работы'), reverse=r_s)
-    elif param == 'Дата публикации вакансии':
-        newlist = sorted(data, key=itemgetter('Дата и время'), reverse=r_s)
-    else:
-        newlist = sorted(data, key=itemgetter(param), reverse=r_s)
-    return newlist
+    is_reversed_sort = r_s == 'Да'
+
+    param_convert = {
+        'Оклад': 'Зарплата в рублях',
+        'Навыки': 'Количество навыков',
+        'Опыт работы': 'Индекс опыта работы',
+        'Дата публикации вакансии': 'Дата и время'
+    }
+
+    if param in param_convert.keys():
+        return sorted(data, key=itemgetter(param_convert[param]), reverse=is_reversed_sort)
+
+    return sorted(data, key=itemgetter(param), reverse=is_reversed_sort)
 
 
 def formatter(row):
